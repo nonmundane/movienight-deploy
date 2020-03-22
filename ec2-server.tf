@@ -58,7 +58,7 @@ resource "aws_instance" "movienight" {
 
   root_block_device {
     volume_type           = "gp2"
-    volume_size           = "16"
+    volume_size           = "10"
     delete_on_termination = true
   }
 
