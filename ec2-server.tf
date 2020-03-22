@@ -9,14 +9,16 @@ resource "aws_security_group" "movienight" {
     to_port     = 22
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
+    description = "SSH Access"
   }
 
   # Stream access from anywhere
   ingress {
-    from_port   = 8089
-    to_port     = 8089
+    from_port   = 80
+    to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
+    description = "Public Streaming Port"
   }
 
   # RTMP access from anywhere
@@ -25,6 +27,7 @@ resource "aws_security_group" "movienight" {
     to_port     = 1935
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
+    description = "RTMP Inbound Port"
   }
 
   # outbound internet access
@@ -107,6 +110,26 @@ resource "aws_instance" "movienight" {
       "sudo mv /tmp/movie_night.service /etc/systemd/system/movie_night.service",
       "sudo systemctl enable movie_night",
       "sudo systemctl start movie_night",
+    ]
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo apt install -y nginx",
+      "sudo rm -f /etc/nginx/sites-enabled/default",
+    ]
+  }
+
+  provisioner "file" {
+    source      = "movie_night.conf"
+    destination = "/tmp/movie_night.conf"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo mv /tmp/movie_night.conf /etc/nginx/sites-available/movie_night.conf",
+      "sudo ln -s /etc/nginx/sites-available/movie_night.conf /etc/nginx/sites-enabled/movie_night.conf",
+      "sudo systemctl restart nginx",
     ]
   }
 }
