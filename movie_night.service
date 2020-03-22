@@ -1,0 +1,13 @@
+[Unit]
+Description=Movie Night
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/MovieNight
+ExecStart=/opt/MovieNight/MovieNight -k "INSERT_YOUR_KEY_HERE"
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
