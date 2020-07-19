@@ -1,7 +1,19 @@
+data "aws_ami" "ubuntu_lts_latest" {
+  most_recent = true
+  owners = ["099720109477"]
+  filter {
+    name = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
+  }
+  filter {
+    name = "virtualization-type"
+    values = ["hvm"]
+  }
+}
+
 resource "aws_security_group" "movienight" {
   name        = "movienight"
   description = "Allow SSH and streaming ports open"
-  vpc_id      = var.vpc_id
 
   # SSH access from anywhere
   ingress {
@@ -45,17 +57,17 @@ resource "aws_key_pair" "auth" {
 }
 
 resource "aws_instance" "movienight" {
-  ami                    = var.aws_image
+  ami                    = data.aws_ami.ubuntu_lts_latest.id
   instance_type          = var.instance_type
   key_name               = aws_key_pair.auth.id
-  vpc_security_group_ids = ["${aws_security_group.movienight.id}"]
+  security_groups = ["${aws_security_group.movienight.name}"]
   # a1 instances are only in us-west-2a or 2c, subnet_id indexes start at 0 not 1
-  subnet_id = element(var.subnet, 0)
+  #subnet_id = element(var.subnet, 0)
 
   connection {
     type        = "ssh"
     user        = var.ssh_username
-    private_key = file("${path.module}\\movienight-openssh")
+    private_key = file("~/.ssh/id_rsa")
     host        = self.public_ip
   }
 
@@ -136,7 +148,7 @@ resource "aws_instance" "movienight" {
 
 resource "aws_route53_record" "movienight" {
   zone_id = var.route53_domain_id
-  name    = mystream.${var.route53_domain}"
+  name    = "mystream.${var.route53_domain}"
   type    = "A"
   ttl     = "300"
   records = ["${element(aws_instance.movienight.*.public_ip, 0)}"]
